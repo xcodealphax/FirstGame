@@ -28,6 +28,7 @@ SPRITE bullets[BULLETS];
 LPDIRECT3DTEXTURE9 Explosion_img;
 
 Laser laser;
+Laser laser2;
 
 bool BackGroundCreat()
 {
@@ -141,7 +142,8 @@ bool Game_Init(HWND window)
 	}
 
 	//initialize laser
-	laser.InitLaser("pre_laser.png", 3, 3, 800);
+	laser.InitLaser("pre_laser.png", 3, 3, "laser2_head_20X45.tga", "laser2_body_20X45X10.tga", "laser2_tail_20X45X12.tga", 20, 45, 800, 1500);
+	laser2.InitLaser("pre_laser.png", 3, 3, "laser2_head_20X45.tga", "laser2_body_20X45X10.tga", "laser2_tail_20X45X12.tga", 20, 45, 800, 1500);
 
     return true;
 }
@@ -318,8 +320,35 @@ void Drawbullets()
 	}
 }
 
+void DrawBoom()
+{
+	static bool IsBoom = false;//只动画一次 不循环
+	if ((IsBoom == false) && (Earth.alive == false))//boom~~~~~
+	{
+		static int frame = 0;
+		static int NowTime = GetTickCount();
+		float boom_scale = 1.2;//爆炸放缩比例
+
+		int xx = 0, yy = 0;//记录earth中心点
+		xx = Earth.x + Earth.width / 2;
+		yy = Earth.y + Earth.height / 2;
+
+		int L_x = (xx - 128 * boom_scale / 2);//爆炸中心点需要与earth中心点对齐,找到爆炸左上角点
+		int L_y = (yy - 128 * boom_scale / 2);
+
+		Sprite_Animate(frame, 0, 29, 1, NowTime, 30);
+		//Sprite_Draw_Frame(Explosion_img, Earth.x, Earth.y, frame, 128, 128, 6);
+		Sprite_Transform_Draw(Explosion_img, L_x, L_y, 128, 128, frame, 6, 0, boom_scale, D3DCOLOR_XRGB(255, 255, 255));//由于爆炸是128*128  地球是64*64  故需要放缩
+
+		if (frame == 29)
+			IsBoom = true;
+	}
+}
+
+
 void HandCollision()
 {
+	//****子弹碰撞
 	for (int i = 0; i < BULLETS; ++i)
 	{
 		if (bullets[i].alive == true)
@@ -333,27 +362,6 @@ void HandCollision()
 		}
 	}
 
-	static bool IsBoom = false;//只动画一次 不循环
-	if ((IsBoom==false) && (Earth.alive == false))//boom~~~~~
-	{
-		static int frame = 0;
-		static int NowTime = GetTickCount(); 
-		float boom_scale = 1.2;//爆炸放缩比例
-
-		int xx = 0, yy = 0;//记录earth中心点
-		xx = Earth.x + Earth.width / 2;
-		yy = Earth.y + Earth.height / 2;
-		
-		int L_x = (xx - 128 * boom_scale / 2);//爆炸中心点需要与earth中心点对齐,找到爆炸左上角点
-		int L_y = (yy - 128 * boom_scale / 2);
-
-		Sprite_Animate(frame, 0, 29, 1, NowTime, 30);
-		//Sprite_Draw_Frame(Explosion_img, Earth.x, Earth.y, frame, 128, 128, 6);
-		Sprite_Transform_Draw(Explosion_img, L_x, L_y, 128, 128, frame, 6, 0, boom_scale, D3DCOLOR_XRGB(255, 255, 255));//由于爆炸是128*128  地球是64*64  故需要放缩
-
-		if (frame == 29)
-			IsBoom = true;
-	}
 }
 
 void Game_Run(HWND window)
@@ -370,11 +378,11 @@ void Game_Run(HWND window)
         screentimer = GetTickCount();
 
 		Update_Background();
-
-		if ((rand() % 400 == 1)&&(laser.IsLaser()==false))
-		{
-			laser.ProduceLaser((rand()%50)*20);
-		}
+		
+		if (laser.IsLaser()==false)
+			laser.ProduceLaser((unsigned int)time(NULL), 0.01, (rand() % 50) * 20);
+		if (laser2.IsLaser() == false)
+			laser2.ProduceLaser((unsigned int)(time(NULL)*2), 0.2, (rand() % 50) * 20);
 
         //start rendering
         if (d3ddev->BeginScene())
@@ -385,13 +393,19 @@ void Game_Run(HWND window)
 			ProduceBullets();
 			UpDataBullets();
 			UpdataPosition();
-			HandCollision();//碰撞处理
+			
 
 			Draw_Background();
 			Draw_Earth();
 			Drawbullets();
 
 			laser.DrawLaser();
+			laser2.DrawLaser();
+
+			HandCollision();//子弹碰撞处理
+			laser.HandCollision(Earth);//激光碰撞处理
+			laser2.HandCollision(Earth);//激光碰撞处理
+			DrawBoom();//爆炸动画
 
             //stop rendering
 			spriteobj->End();
@@ -414,24 +428,73 @@ void Game_End()
     Direct3D_Shutdown();
 }
 
-void Laser::InitLaser(const string img, int width, int height, unsigned long hold_time)
+void Laser::InitLaser(const string pre_img, int width, int height, const string laser_head_img, const string laser_body_mig, const string laser_tail_img, int width2, int height2, unsigned long pr_HoldTime, unsigned long in_HoldTim)
 {
-	pre_laser = LoadTexture(img);
+	pre_laser = LoadTexture(pre_img);
 	for (int i = 0; i < CNT; ++i)
 	{
 		Pot[i].width = width;
 		Pot[i].height = height;
 	}
-	HoldTime = hold_time;
+
+	laser_head = LoadTexture(laser_head_img);
+	laser_body = LoadTexture(laser_body_mig);
+	for (int i = 0; i < CNT_B; ++i)
+	{
+		LaserB[i].width = width2;
+		LaserB[i].height = height2;
+	}
+
+	laser_tail = LoadTexture(laser_tail_img);
+	for (int i = 0; i < CNT_T; ++i)
+	{
+		LaserT[i].width = width2;
+		LaserT[i].height = height2;
+		LaserT[i].frame = i;
+	}
+
+
+	PreHoldTime = pr_HoldTime;
+	InHoldTime = in_HoldTim;
+
+	ProduceLocker = false;
+	LastTime = GetTickCount();
+	State = None;
 }
 
-int Laser::State = -1;
-unsigned long Laser::LastTime = GetTickCount();
+
+void Laser::UpdataBody()
+{
+	//////////////////////updata 激光位置
+	for (int i = 0; i < CNT_B; ++i)
+	{
+		if (LaserB[i].alive)
+		{
+			LaserB[i].x -= laser_speed;
+			if (LaserB[i].x < -LaserB[i].width)
+				LaserB[i].alive = false;
+		}
+	}
+}
+
+void Laser::DrawBody()
+{
+	for (int i = 0; i < CNT_B; ++i)
+	{
+		if (LaserB[i].alive == true)
+		{
+			if (LaserB[i].direction != -1)
+				Sprite_Draw_Frame(laser_body, LaserB[i].x, LaserB[i].y, LaserB[i].frame, LaserB[i].width, LaserB[i].height, 10);
+			else
+				Sprite_Draw_Frame(laser_head, LaserB[i].x, LaserB[i].y, LaserB[i].frame, LaserB[i].width, LaserB[i].height, 1);
+		}
+	}
+}
 
 void Laser::DrawLaser()
-{
+{	
 	Timer = GetTickCount();
-	if (State == 0)
+	if (State == PreLaser)
 	{
 		for (int x = CNT; x >= 0; --x)
 		{
@@ -451,22 +514,246 @@ void Laser::DrawLaser()
 
 		}
 
-		if ((Timer - LastTime) >= HoldTime)
+		if ((Timer - LastTime) >= PreHoldTime)
 		{
 			LastTime = Timer;
-			State = -1;
+			State = InLaser;
+		}
+	}
+	else if (State == InLaser)//******激光本体
+	{		
+
+		//////////////////////updata 激光位置
+		UpdataBody();
+
+		////////////////////产生激光序列
+		bool IsOneAlive = false;
+		for (int i = 0; i < CNT_B; ++i)
+		{
+			if (LaserB[i].alive == true)
+			{
+				IsOneAlive = true; break;
+			}
+		}
+		if (IsOneAlive)//产生激光body
+		{
+			int max_x = 0;//记录最大的末尾值
+			for (int i = 0; i < CNT_B; ++i)
+			{
+				if (LaserB[i].alive == true)
+				{
+					if ((LaserB[i].x + LaserB[i].width) >= max_x)
+						max_x = LaserB[i].x + LaserB[i].width;
+				}
+			}
+			if (max_x >= SCREENW)//大于屏幕了，则不画
+				;
+			else//小于屏幕 新产生N个激光body 一直到屏幕末尾
+			{
+				int Cnt =(int) ceil((double)(SCREENW - max_x) / (double)(LaserB[0].width));//计算产生多少个body 向上取整
+				for (int j = 0; j < Cnt; ++j)
+				{
+					int i = 0;
+					for (i = 0; i < CNT_B; ++i)
+					{
+						if (LaserB[i].alive == false)
+							break;
+					}
+					LaserB[i].alive = true;
+					LaserB[i].x = max_x + j*LaserB[0].width;
+					LaserB[i].y = base_line_y;
+					LaserB[i].direction = 0;
+					LaserB[i].frame = rand() % 10;//由于激光body的图是20*45*10的，因此随便选一帧
+				}
+			}
+		}
+		else//产生激光头(direction==-1)
+		{
+			LaserB[0].alive = true;
+			LaserB[0].x = SCREENW;
+			LaserB[0].y = base_line_y;
+			LaserB[0].direction = -1;
+			LaserB[0].frame = 0;
+		}
+
+		/////////////////////Draw激光
+		DrawBody();
+
+		if ((Timer - LastTime) >= InHoldTime)
+		{
+			LastTime = Timer;
+			State = OffLaser;//should to OffLazer
+		}
+	}
+	else if (State == OffLaser)//******激光尾
+	{
+		//****更新激光尾位置
+		UpdataTail();
+		UpdataBody();
+
+		bool IsBodyAlive = false;//是否有激光体存活标志
+		bool IsTailAlive = false;//是否有激光体尾存活标志
+		for (int i = 0; i < CNT_B; ++i)
+		{
+			if (LaserB[i].alive == true)
+			{
+				IsBodyAlive = true;
+				break;
+			}
+		}
+		for (int i = 0; i < CNT_T; ++i)
+		{
+			if (LaserT[i].alive == true)
+			{
+				IsTailAlive = true;
+				break;
+			}
+		}
+		//构建激光尾部
+		if (IsTailAlive == true)
+		{
+			int i = 0;
+			for (i = 0; i < CNT_T; ++i)
+			{
+				if (LaserT[i].alive==false)
+					break;
+			}
+			if (LaserT[CNT_T - 1].alive)
+				;//如果最后的激光尾都活着，那么就不继续构建
+			else
+			{
+				int Cnt = (int)ceil((double)(SCREENW - (LaserT[i - 1].x + LaserT[i - 1].width)) / (double)(LaserT[0].width));//计算产生多少个tail 向上取整
+				int k = 0;
+				for (int j = i; (j < CNT_T) && (k < Cnt); ++j, ++k)//产生tail
+				{
+					LaserT[j].alive = true;
+					LaserT[j].x = LaserT[j - 1].x + LaserT[j - 1].width;
+					LaserT[j].y = base_line_y;
+				}
+			}
+		}
+		else if (IsBodyAlive==true)
+		{		
+
+			//找最后一个激光体位置
+			int max_x = 0;
+			for (int i = 0; i < CNT_B; ++i)
+			{
+				if (LaserB[i].alive == true)
+				{
+					if ((LaserB[i].x + LaserB[i].width) >= max_x)
+						max_x = LaserB[i].x + LaserB[i].width;
+				}
+			}
+
+			int Cnt = (int)ceil((double)(SCREENW - max_x) / (double)(LaserT[0].width));//计算产生多少个tail 向上取整
+			int k = 0;
+			for (int j = 0; (j < CNT_T) && (k < Cnt); ++j, ++k)//产生tail
+			{
+				LaserT[j].alive = true;
+				if (j == 0)
+					LaserT[0].x = max_x;
+				else
+					LaserT[j].x = LaserT[j - 1].x + LaserT[j - 1].width;
+				LaserT[j].y = base_line_y;
+			}
+		}
+		else
+			;//激光尾和激光体都无存活
+
+		//////////Draw激光
+		DrawBody();
+		DrawTail();
+
+		if ((IsBodyAlive == false) && (IsTailAlive==false))
+		{
+			LastTime = Timer;
+			State = None;//should to OffLazer
+		}
+
+	}
+}
+
+void Laser::UpdataTail()
+{
+	//////////////////////updata 激光尾位置
+	for (int i = 0; i < CNT_T; ++i)
+	{
+		if (LaserT[i].alive)
+		{
+			LaserT[i].x -= laser_speed;
+			if (LaserT[i].x < -LaserT[i].width)
+				LaserT[i].alive = false;
 		}
 	}
 }
 
-void Laser::ProduceLaser(int y)
+void Laser::DrawTail()
 {
- 	for (int i = CNT-1; i >= 0; --i)
+	for (int i = 0; i < CNT_T; ++i)
 	{
-		Pot[i].x = (float)i;
-		Pot[i].y = (float)y;
+		if (LaserT[i].alive == true)
+		{
+			Sprite_Draw_Frame(laser_tail, LaserT[i].x, LaserT[i].y, LaserT[i].frame, LaserT[i].width, LaserT[i].height, 12);
+		}
 	}
-	State = 0;
-	LastTime = GetTickCount();
 
+}
+
+void Laser::ProduceLaser(unsigned int Seed, double probability, int axi_y)//probability: 0.00-1.00 最多小数点后两位
+{
+	if (ProduceLocker == false)
+	{
+		srand(Seed);
+		ProduceLocker = true;
+	}
+
+	int Number = (int)(probability * 100);
+	if ((rand() % 100) < Number)//laser start
+	{
+		for (int i = CNT - 1; i >= 0; --i)
+		{
+			Pot[i].x = (float)i;
+			Pot[i].y = (float)axi_y;
+		}
+		for (int i = 0; i < CNT_B; ++i)
+		{
+			LaserB[i].x = SCREENW + LaserB[i].width;
+			LaserB[i].y = axi_y;
+			LaserB[i].alive = false;
+			LaserB[i].direction = 0;
+		}
+		for (int i = 0; i < CNT_T; ++i)
+		{
+			LaserT[i].x = SCREENW + LaserB[i].width;
+			LaserT[i].y = axi_y;
+			LaserT[i].alive = false;
+		}
+		base_line_y = axi_y;
+		State = PreLaser;//important key 
+		LastTime = GetTickCount();
+	}
+}
+
+bool Laser::IsCollision(SPRITE &obj)//是否有激光碰撞
+{
+	bool A = false;
+	for (int i = 0; i < CNT_B; ++i)
+	{
+		if (Collision(LaserB[i], obj))
+		{
+			A = true;
+			return A;
+		}
+	}
+
+	for (int i = 0; i < CNT_T; ++i)
+	{
+		if (Collision(LaserT[i], obj))
+		{
+			A = true;
+			return A;
+		}
+	}
+	return A;
 }
