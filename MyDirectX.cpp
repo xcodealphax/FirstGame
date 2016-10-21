@@ -216,7 +216,7 @@ void Sprite_Transform_Draw(LPDIRECT3DTEXTURE9 image, int x, int y, int width, in
 }
 
 //bounding  box collision detection
-int Collision(SPRITE sprite1, SPRITE sprite2)
+bool Collision(SPRITE &sprite1, SPRITE &sprite2)
 {
     RECT rect1;
     rect1.left = (long)sprite1.x;
@@ -235,7 +235,7 @@ int Collision(SPRITE sprite1, SPRITE sprite2)
 }
 
 
-bool CollisionD(SPRITE sprite1, SPRITE sprite2)
+bool CollisionD(SPRITE &sprite1, SPRITE &sprite2)
 {
     double radius1, radius2;
 

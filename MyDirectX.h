@@ -94,10 +94,10 @@ void Sprite_Animate(int &frame, int startframe, int endframe, int direction, int
         D3DCOLOR color = D3DCOLOR_XRGB(255,255,255));
 
 //bounding box collision detection
-int Collision(SPRITE sprite1, SPRITE sprite2);
+bool Collision(SPRITE &sprite1, SPRITE &sprite2);
 
 //distance based collision detection
-bool CollisionD(SPRITE sprite1, SPRITE sprite2);
+bool CollisionD(SPRITE &sprite1, SPRITE &sprite2);
 
 //DirectInput objects, devices, and states
 extern LPDIRECTINPUT8 dinput;
