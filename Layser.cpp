@@ -68,7 +68,7 @@ void Laser::DrawLaser()
 	Timer = GetTickCount();
 	if (State == PreLaser)
 	{
-		for (int x = CNT; x >= 0; --x)
+		for (int x = CNT - 1; x >= 0; --x)
 		{
 
 			D3DCOLOR color = D3DCOLOR_ARGB(255, 255, 255, 255);
@@ -283,9 +283,9 @@ void Laser::ProduceLaser(unsigned int Seed, double probability, int axi_y)//prob
 	int Number = (int)(probability * 100);
 	if ((rand() % 100) < Number)//laser start
 	{
-		for (int i = CNT - 1; i >= 0; --i)
+		for (int i = 0; i < CNT; ++i)
 		{
-			Pot[i].x = (float)i;
+			Pot[i].x = (float)(i*8);
 			Pot[i].y = (float)axi_y - Pot[i].height / 2.0;
 		}
 		for (int i = 0; i < CNT_B; ++i)

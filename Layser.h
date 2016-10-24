@@ -14,7 +14,7 @@ class Laser
 private:
 	int laser_speed = 100;//******¼¤¹âËÙ¶È
 
-	static const int CNT = 1024;
+	static const int CNT = 128;
 	LaserStateType State;//0 prelaser½×¶Î 1 laser½×¶Î	
 	LPDIRECT3DTEXTURE9 pre_laser;
 	SPRITE_PLUS Pot[CNT];
