@@ -31,14 +31,18 @@ LPDIRECT3DTEXTURE9 Explosion_img;
 Laser laser;
 Laser laser2;
 
-LPDIRECT3DTEXTURE9 BOMB_img;
+LPDIRECT3DTEXTURE9 BOMB_normal_img;
+LPDIRECT3DTEXTURE9 BOMB_waining_img;
+LPDIRECT3DTEXTURE9 BOMB_explosion_img;
 BOMB_BULLETS BombBullets(3);
+
+FLOWER_BULLETS FlowerBullets(200);
 
 bool BackGroundCreat()
 {
 	//load background
 	LPDIRECT3DSURFACE9 image = NULL;
-	image = LoadSurface("background.bmp");
+	image = LoadSurface(".\\Resource\\background.bmp");
 	if (!image) return false;
 
 	HRESULT result =
@@ -113,7 +117,7 @@ bool Game_Init(HWND window)
 	}
 
 	//initialize Earth
-	Earth_img = LoadTexture("earth.png");
+	Earth_img = LoadTexture(".\\Resource\\earth.png");
 	if (!Earth_img) {
 		MessageBox(window, "Error loading sprite", "Error", 0);
 		return false;
@@ -124,7 +128,7 @@ bool Game_Init(HWND window)
 	Earth.width = Earth.height = 64;
 
 	//initialize Bullets
-	BULLETS_img = LoadTexture("bullets.tga", D3DCOLOR_XRGB(0,67,171));//指定掩膜颜色
+	BULLETS_img = LoadTexture(".\\Resource\\bullets.tga", D3DCOLOR_XRGB(0,67,171));//指定掩膜颜色
 	if (!BULLETS_img) {
 		MessageBox(window, "Error loading sprite", "Error", 0);
 		return false;
@@ -133,23 +137,31 @@ bool Game_Init(HWND window)
 
 
 	//initialize explosion sprite
-	Explosion_img = LoadTexture("explosion_30_128.tga");
+	Explosion_img = LoadTexture(".\\Resource\\explosion_30_128.tga");
 	if (!Explosion_img) {
 		MessageBox(window, "Error loading sprite", "Error", 0);
 		return false;
 	}
 
 	//initialize laser
-	laser.InitLaser("pre_laser.png", 8, 3, "laser2_head_20X45.tga", "laser2_body_20X45X10.tga", "laser2_tail_20X45X12.tga", 20, 45, 800, 1500);
-	laser2.InitLaser("pre_laser.png", 8, 3, "laser2_head_20X45.tga", "laser2_body_20X45X10.tga", "laser2_tail_20X45X12.tga", 20, 45, 800, 1500);
+	laser.InitLaser(".\\Resource\\pre_laser.png", 8, 3, ".\\Resource\\laser2_head_20X45.tga", 
+		".\\Resource\\laser2_body_20X45X10.tga", ".\\Resource\\laser2_tail_20X45X12.tga", 20, 45, 800, 1500);
+	laser2.InitLaser(".\\Resource\\pre_laser.png", 8, 3, ".\\Resource\\laser2_head_20X45.tga", 
+		".\\Resource\\laser2_body_20X45X10.tga", ".\\Resource\\laser2_tail_20X45X12.tga", 20, 45, 800, 1500);
 
 	//initialize bomb sprite
-	BOMB_img = LoadTexture("bomb_45X27.tga");
-	if (!BOMB_img) {
+	BOMB_normal_img = LoadTexture(".\\Resource\\bomb_45X27.tga");
+	BOMB_waining_img = LoadTexture(".\\Resource\\Bomb_ani_45x27x10.tga");
+	BOMB_explosion_img = LoadTexture(".\\Resource\\explosion_30_128.tga");
+	if ((!BOMB_normal_img) || (!BOMB_waining_img) || (!BOMB_explosion_img))
+	{
 		MessageBox(window, "Error loading sprite", "Error", 0);
 		return false;
 	}
 	BombBullets.Init(45, 27);
+
+	//initialize flower sprite
+	FlowerBullets.Init(16, 8);
 
     return true;
 }
@@ -326,20 +338,27 @@ void Game_Run(HWND window)
 
 			NormalBullets.ProduceOneBullets();
 			NormalBullets.UpDataPosition();
-			BombBullets.Produce((unsigned int)(time(NULL) * 4), 0.01, (rand() % 50) * 20, (rand()%102)*10);
-			BombBullets.UpDataPosition();
+			BombBullets.Produce((unsigned int)(time(NULL) * 4), 0.01, 45, 27, (rand() % 50) * 20, (rand() % 102) * 10);
+			BombBullets.UpDataPosition(FlowerBullets);//更新位置与frame等信息
+
+			//FlowerBullets.Produce(600,600,20,16,10);
+			FlowerBullets.UpDataPosition();
 			UpdataPosition();
 			
-
+			
 			Draw_Background();
 			Draw_Earth();
 			NormalBullets.Draw(BULLETS_img);
-			BombBullets.Draw(BOMB_img);
+			FlowerBullets.Draw(BULLETS_img);
+			BombBullets.Draw(BOMB_normal_img, BOMB_waining_img, BOMB_explosion_img);
+
 
 			laser.DrawLaser();
 			laser2.DrawLaser();
+			
 
 			NormalBullets.HandleCollision(Earth);//子弹碰撞处理
+			FlowerBullets.HandleCollision(Earth);//花弹碰撞处理
 			BombBullets.HandleCollision(Earth);//炸弹碰撞处理
 			laser.HandCollision(Earth);//激光碰撞处理
 			laser2.HandCollision(Earth);//激光碰撞处理

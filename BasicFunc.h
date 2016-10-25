@@ -10,7 +10,6 @@ private:
 
 public:
 	long length;//目前行走的距离
-	int state;
 	inline double Move();
 	SPRITE_PLUS() {}
 };

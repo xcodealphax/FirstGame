@@ -56,9 +56,11 @@ void Laser::DrawBody()
 		if (LaserB[i].alive == true)
 		{
 			if (LaserB[i].direction != -1)
-				Sprite_Draw_Frame(laser_body, LaserB[i].x, LaserB[i].y, LaserB[i].frame, LaserB[i].width, LaserB[i].height, 10);
+				Sprite_Transform_Draw(laser_body, LaserB[i].x, LaserB[i].y, LaserB[i].width, LaserB[i].height,
+				LaserB[i].frame, 10, 0, 1.0f, D3DCOLOR_RGBA(255,255,255,200));
 			else
-				Sprite_Draw_Frame(laser_head, LaserB[i].x, LaserB[i].y, LaserB[i].frame, LaserB[i].width, LaserB[i].height, 1);
+				Sprite_Transform_Draw(laser_body, LaserB[i].x, LaserB[i].y, LaserB[i].width, LaserB[i].height,
+				LaserB[i].frame, 1, 0, 1.0f, D3DCOLOR_RGBA(255, 255, 255, 200));
 		}
 	}
 }
@@ -266,7 +268,8 @@ void Laser::DrawTail()
 	{
 		if (LaserT[i].alive == true)
 		{
-			Sprite_Draw_Frame(laser_tail, LaserT[i].x, LaserT[i].y, LaserT[i].frame, LaserT[i].width, LaserT[i].height, 12);
+			Sprite_Transform_Draw(laser_tail, LaserT[i].x, LaserT[i].y, LaserT[i].width, LaserT[i].height,
+				LaserT[i].frame, 12, 0, 1.0f, D3DCOLOR_RGBA(255, 255, 255, 200));
 		}
 	}
 
